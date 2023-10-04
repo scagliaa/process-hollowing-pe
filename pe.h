@@ -4,6 +4,7 @@
 #include <memoryapi.h>
 #include <optional>
 #include <processthreadsapi.h>
+#include <random>
 #include <winbase.h>
 
 #ifndef PROCESS_HOLLOWING_PE_H
@@ -12,6 +13,12 @@
 // always use smart pointers instead of raw pointers to manage memory more efficiently and avoid memory leaks
 
 namespace util {
+    unsigned int generate_random_sleep_duration(unsigned int min_duration, unsigned int max_duration) {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(min_duration, max_duration);
+        return dis(gen);
+    }
     bool enable_debug_privilege() {
         HANDLE token;
         TOKEN_PRIVILEGES token_privileges;

