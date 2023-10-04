@@ -48,8 +48,8 @@ namespace process {
         return nt_dll;
     }
 
-    auto get_nt_query_info_process(HMODULE nt_dll) -> std::optional<NTQUERYINFOPROC> {
-        auto nt_query_info_process = reinterpret_cast<NTQUERYINFOPROC>(GetProcAddress(nt_dll, "NtQueryInformationProcess"));
+    std::optional<NtQueryInformationProcess_t> get_nt_query_info_process(HMODULE nt_dll) {
+        auto nt_query_info_process = reinterpret_cast<NtQueryInformationProcess_t>(GetProcAddress(nt_dll, "NtQueryInformationProcess"));
         if (!nt_query_info_process) {
             return std::nullopt;
         }
