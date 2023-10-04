@@ -11,9 +11,12 @@
 constexpr auto exe_path{R"(C:\Windows\System32\svchost.exe)"};
 
 auto main() -> int {
+
     // Parse headers and validate the NT header
+
     auto dos_header = reinterpret_cast<PIMAGE_DOS_HEADER>(raw_data);
     auto nt_header = process::get_nt_header(dos_header);
+
     if (!process::is_valid_nt_header(nt_header)) {
         std::cerr << "Invalid NT header" << std::endl;
         return 1;

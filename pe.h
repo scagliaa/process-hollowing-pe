@@ -9,33 +9,23 @@
 #ifndef PROCESS_HOLLOWING_PE_H
 #define PROCESS_HOLLOWING_PE_H
 
+// always use smart pointers instead of raw pointers to manage memory more efficiently and avoid memory leaks
+
 namespace util {
     bool enable_debug_privilege() {
         HANDLE token;
         TOKEN_PRIVILEGES token_privileges;
-
         if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
             return false;
         }
-
         LookupPrivilegeValue(nullptr, SE_DEBUG_NAME, &token_privileges.Privileges[0].Luid);
-
         token_privileges.PrivilegeCount = 1;
         token_privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
         if (!AdjustTokenPrivileges(
-                    token,
-                    FALSE,
-                    &token_privileges,
-                    sizeof(TOKEN_PRIVILEGES),
-                    nullptr,
-                    nullptr)
-            )
-        {
+                    token, FALSE, &token_privileges, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr)) {
             CloseHandle(token);
             return false;
         }
-
         CloseHandle(token);
         return true;
     }
@@ -50,7 +40,7 @@ namespace process {
         return reinterpret_cast<PIMAGE_SECTION_HEADER>(raw_data + dos_header->e_lfanew + sizeof(IMAGE_NT_HEADERS64));
     }
 
-    auto load_ntdll() -> std::optional<HMODULE>  {
+    auto load_ntdll() -> std::optional<HMODULE> {
         HMODULE nt_dll = LoadLibraryA("ntdll.dll");
         if (!nt_dll) {
             return std::nullopt;
@@ -73,14 +63,9 @@ namespace process {
     auto create_suspended_process(const std::filesystem::path &exe_path) -> std::optional<PROCESS_INFORMATION> {
         auto process_info = std::make_unique<PROCESS_INFORMATION>();
         STARTUPINFO si{sizeof(si)};
-
-        if (!CreateProcess(reinterpret_cast<LPCSTR>(exe_path.c_str()),
-                           nullptr, nullptr, nullptr, FALSE,
-                           CREATE_SUSPENDED,
-                           nullptr, nullptr, &si, process_info.get())) {
+        if (!CreateProcess(reinterpret_cast<LPCSTR>(exe_path.c_str()), nullptr, nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, nullptr, &si, process_info.get())) {
             return std::nullopt;
         }
-
         return *process_info;
     }
 
@@ -91,7 +76,6 @@ namespace process {
         }
         return memory;
     }
-
 
     auto write_process_memory(HANDLE process, PVOID dest, const void *src, SIZE_T size) {
         SIZE_T bytes_written;
@@ -106,12 +90,12 @@ namespace process {
             PVOID section_dest = reinterpret_cast<PBYTE>(new_image_base) + section_header[i].VirtualAddress;
             PVOID section_src = reinterpret_cast<PBYTE>(raw_data) + section_header[i].PointerToRawData;
             SIZE_T section_size = section_header[i].SizeOfRawData;
-
             if (!write_process_memory(process, section_dest, section_src, section_size)) {
                 std::cerr << "Failed to write section " << i << " to target process" << std::endl;
             }
         }
     }
 }
+
 
 #endif//PROCESS_HOLLOWING_PE_H
