@@ -8,6 +8,8 @@
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #endif
 
+//TODO: To implement methods to evade detection by anti-malware software in the project
+
 constexpr auto exe_path{R"(C:\Windows\System32\svchost.exe)"};
 
 auto main() -> int {
