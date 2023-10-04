@@ -9,12 +9,14 @@
 #include <winbase.h>
 #include <winnt.h>
 namespace util {
+
     unsigned int generate_random_sleep_duration(unsigned int min_duration, unsigned int max_duration) {
         static std::random_device rd;
         static std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis(min_duration, max_duration);
         return dis(gen);
     }
+
     bool enable_debug_privilege() {
         HANDLE token;
         TOKEN_PRIVILEGES token_privileges;
@@ -35,6 +37,7 @@ namespace util {
 }
 
 namespace process {
+
     auto get_nt_header(PIMAGE_DOS_HEADER dos_header) {
         return reinterpret_cast<PIMAGE_NT_HEADERS64>(raw_bytes + dos_header->e_lfanew);
     }
