@@ -23,5 +23,5 @@ The following functions are implemented in the code:
 <ul>
 <li>Clone the repository.</li>
 <li>Open the project in your preferred C++ IDE or compiler.</li>
-<li>Place the shellcode in the raw_data variable in <strong>shellcode.h</strong></li>
+<li>Place the shellcode in the raw_bytes variable in <strong>shellcode.h</strong></li>
 </ul>

